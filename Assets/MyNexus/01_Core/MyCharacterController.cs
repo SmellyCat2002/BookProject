@@ -4,7 +4,7 @@ namespace MyNexus
 {
     /// <summary>
     /// 主控器 - 复刻BBBNexus
-    /// 第2步：集成MyRuntimeData黑板
+    /// 第3步：集成状态机
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(Animator))]
@@ -18,9 +18,14 @@ namespace MyNexus
         private Animator _animator;
 
         // ============================================
-        // 第2步新增：运行时数据黑板
+        // 第2步：运行时数据黑板
         // ============================================
         public MyRuntimeData RuntimeData { get; private set; }
+
+        // ============================================
+        // 第3步：状态机
+        // ============================================
+        public MyStateMachine StateMachine { get; private set; }
 
         // 启动标志
         private bool _booted;
@@ -34,7 +39,10 @@ namespace MyNexus
             // 第2步：实例化数据黑板
             RuntimeData = new MyRuntimeData(this);
 
-            Debug.Log("[MyNexus] Awake - 组件获取 + 数据黑板初始化完成");
+            // 第3步：实例化状态机（暂时不初始化，等Boot时初始化）
+            StateMachine = new MyStateMachine();
+
+            Debug.Log("[MyNexus] Awake - 组件 + 黑板 + 状态机 创建完成");
         }
 
         private void Start()
@@ -49,12 +57,13 @@ namespace MyNexus
             // 初始化相机
             if (PlayerCamera == null && Camera.main != null)
                 PlayerCamera = Camera.main.transform;
-
-            // 确保RuntimeData也拿到相机引用
             RuntimeData.CameraTransform = PlayerCamera;
 
+            // 第3步：初始化状态机，设为Idle状态
+            StateMachine.Initialize(new MyIdleState(this));
+
             _booted = true;
-            Debug.Log("[MyNexus] 启动完成！数据黑板已就绪");
+            Debug.Log("[MyNexus] 启动完成！状态机已就绪");
         }
 
         /// <summary>
@@ -64,11 +73,25 @@ namespace MyNexus
         {
             if (!_booted) return;
 
-            // 预留位置：将来这里会按顺序调用各个系统
-            // 1. ArbiterPipeline.ProcessUpdateArbiters()
-            // 2. InputPipeline.Update()
-            // 3. MainProcessorPipeline.UpdateIntentProcessors()
-            // 4. StateMachine.CurrentState.LogicUpdate()
+            // 第4步：读取输入（临时放在这里，后面会拆到输入系统）
+            ReadInput();
+
+            // 第3步：状态机逻辑更新
+            StateMachine.CurrentState.LogicUpdate();
+        }
+
+        /// <summary>
+        /// 读取输入 - 临时版本，后面会移到InputPipeline
+        /// </summary>
+        private void ReadInput()
+        {
+            // 读取摇杆/键盘
+            float h = Input.GetAxisRaw("Horizontal");
+            float v = Input.GetAxisRaw("Vertical");
+            RuntimeData.MoveInput = new Vector2(h, v).normalized;
+
+            // Shift 奔跑
+            RuntimeData.WantsToRun = Input.GetKey(KeyCode.LeftShift);
         }
 
         /// <summary>
@@ -78,11 +101,23 @@ namespace MyNexus
         {
             if (!_booted) return;
 
-            // 预留位置：将来这里处理物理
-            // 1. StateMachine.CurrentState.PhysicsUpdate()
+            // 第4步：地面检测
+            CheckGround();
 
-            // 第2步新增：每帧结束时清理意图！
+            // 第3步：状态机物理更新
+            StateMachine.CurrentState.PhysicsUpdate();
+
+            // 每帧结束时清理意图！
             RuntimeData.ResetIntent();
+        }
+
+        /// <summary>
+        /// 地面检测 - 临时版本
+        /// </summary>
+        private void CheckGround()
+        {
+            // 使用 CharacterController 的 isGrounded
+            RuntimeData.IsGrounded = _charController.isGrounded;
         }
     }
 }
