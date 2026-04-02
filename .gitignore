@@ -1,0 +1,16 @@
+/.claude
+/.idea
+/.vscode
+/Assembly-CSharp-Editor.csproj
+/Assembly-CSharp.csproj
+/BookProject.sln
+/Kybernetik.Animancer.csproj
+/Kybernetik.Animancer.Editor.csproj
+/Kybernetik.Animancer.FSM.csproj
+/Library
+/Logs
+/obj
+/Packages
+/ProjectSettings
+/Temp
+/UserSettings
