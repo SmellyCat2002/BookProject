@@ -4,7 +4,7 @@ namespace MyNexus
 {
     /// <summary>
     /// 主控器 - 复刻BBBNexus
-    /// 第3步：集成状态机
+    /// MVP：框架完整，状态能跑
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(Animator))]
@@ -27,6 +27,16 @@ namespace MyNexus
         // ============================================
         public MyStateMachine StateMachine { get; private set; }
 
+        // ============================================
+        // 第5步：输入管道
+        // ============================================
+        public MyInputPipeline InputPipeline { get; private set; }
+
+        // ============================================
+        // 第6步：仲裁层
+        // ============================================
+        public SimpleArbiter Arbiter { get; private set; }
+
         // 启动标志
         private bool _booted;
 
@@ -42,7 +52,13 @@ namespace MyNexus
             // 第3步：实例化状态机（暂时不初始化，等Boot时初始化）
             StateMachine = new MyStateMachine();
 
-            Debug.Log("[MyNexus] Awake - 组件 + 黑板 + 状态机 创建完成");
+            // 第5步：实例化输入管道
+            InputPipeline = new MyInputPipeline(new PlayerInputSource());
+
+            // 第6步：实例化仲裁器
+            Arbiter = new SimpleArbiter();
+
+            Debug.Log("[MyNexus] Awake - 组件 + 黑板 + 状态机 + 输入管道 + 仲裁器 创建完成");
         }
 
         private void Start()
@@ -73,25 +89,22 @@ namespace MyNexus
         {
             if (!_booted) return;
 
-            // 第4步：读取输入（临时放在这里，后面会拆到输入系统）
-            ReadInput();
+            // 第5步：输入管道更新 + 读取处理后数据
+            InputPipeline.Update();
+            var processed = InputPipeline.CurrentProcessed;
+            RuntimeData.MoveInput = processed.Move;
+            RuntimeData.LookInput = processed.Look;
+            RuntimeData.WantsToJump = processed.JumpPressed;
+            RuntimeData.WantsToRun = processed.SprintPressed;
+            RuntimeData.WantsToDodge = processed.DodgePressed;
+            RuntimeData.WantsToCrouch = processed.CrouchPressed;
+            RuntimeData.WantsToAttack = processed.AttackPressed;
+
+            // 第6步：仲裁器更新
+            Arbiter.Update(Time.deltaTime);
 
             // 第3步：状态机逻辑更新
             StateMachine.CurrentState.LogicUpdate();
-        }
-
-        /// <summary>
-        /// 读取输入 - 临时版本，后面会移到InputPipeline
-        /// </summary>
-        private void ReadInput()
-        {
-            // 读取摇杆/键盘
-            float h = Input.GetAxisRaw("Horizontal");
-            float v = Input.GetAxisRaw("Vertical");
-            RuntimeData.MoveInput = new Vector2(h, v).normalized;
-
-            // Shift 奔跑
-            RuntimeData.WantsToRun = Input.GetKey(KeyCode.LeftShift);
         }
 
         /// <summary>

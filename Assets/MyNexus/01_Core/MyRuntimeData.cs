@@ -62,6 +62,12 @@ namespace MyNexus
         public bool WantsToJump;
         /// <summary>本帧是否想跑</summary>
         public bool WantsToRun;
+        /// <summary>本帧是否想闪避</summary>
+        public bool WantsToDodge;
+        /// <summary>本帧是否想蹲下</summary>
+        public bool WantsToCrouch;
+        /// <summary>本帧是否想攻击</summary>
+        public bool WantsToAttack;
         #endregion
 
         // ============================================
@@ -76,6 +82,9 @@ namespace MyNexus
         {
             WantsToJump = false;
             WantsToRun = false;
+            WantsToDodge = false;
+            WantsToCrouch = false;
+            WantsToAttack = false;
         }
     }
 }
